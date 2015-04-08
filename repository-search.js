@@ -38,6 +38,7 @@ $( document ).ready(function() {
                 matched_terms: JSON.stringify( model.get( 'matched_terms' ) ),
                 score: Math.ceil(model.get( 'score' ) * 100)/100 } ) );
             this.$el.show();
+            $('[data-toggle="tooltip"]').tooltip()
             return this;
         },
 
@@ -60,14 +61,14 @@ $( document ).ready(function() {
             '   </div>',
             '   <div class="col-md-3">',
             '   <% if (repository.approved === "yes") { %>',
-            '   <div title="This is a Reviewed Tool of High Quality">',
+            '   <div data-toggle="tooltip" data-placement="top" title="This is a Reviewed Tool of High Quality">',
             '       <span class="fa fa-certificate fa-lg"></span>&nbsp; Certified',
             '   </div>',
             '   <% } %>',
-            '   <div title="Total Number of Installations">',
+            '   <div data-toggle="tooltip" data-placement="top" title="Total Number of Installations">',
             '       <span  class="fa fa-download fa-lg"></span>&nbsp; <%- repository.times_downloaded %>',
             '   </div>',
-            '   <div title="Tool Updated on <%- repository.full_last_updated %>">',
+            '   <div data-toggle="tooltip" data-placement="top" title="Updated on <%- repository.full_last_updated %>">',
             '       <span class="fa fa-clock-o fa-lg"></span>&nbsp; <%- repository.last_updated %>',
             '   </div>',
             '   </div>',
@@ -81,9 +82,9 @@ $( document ).ready(function() {
             '</div>',
             '<div class="sub-row collapse row <%- repository.id %>">',
             '   <div class="col-md-10 col-md-offset-1">',
-                    '<a href="<%- repository.url %>" target="_blank"><button type="button" class="btn btn-primary"><span class="fa fa-search-plus fa-lg"></span> Details</button></a>',
-                    '<a title="Visit Homepage" href="<%- repository.homepage_url %>" target="_blank"><button type="button" class="btn btn-primary"><span class="fa fa-home fa-lg"></span> Homepage</button></a>',
-                    '<a href="<%- repository.remote_repository_url %>" target="_blank"><button type="button" class="btn btn-primary"><span class="fa fa-cogs fa-lg"></span> Development</button></a>',
+                    '<a data-toggle="tooltip" data-placement="top" title="Visit Tool Shed" href="<%- repository.url %>" target="_blank"><button type="button" class="btn btn-default"><span class="fa fa-link fa-lg"></span> </button></a>',
+                    '<a data-toggle="tooltip" data-placement="top" title="Visit Homepage" href="<%- repository.homepage_url %>" target="_blank"><button type="button" class="btn btn-default"><span class="fa fa-home fa-lg"></span> </button></a>',
+                    '<a data-toggle="tooltip" data-placement="top" title="Visit Development Repository" href="<%- repository.remote_repository_url %>" target="_blank"><button type="button" class="btn btn-default"><span class="fa fa-cogs fa-lg"></span> </button></a>',
                     // '<div class="btn-group">',
                     //   '<button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-expanded="false">',
                     //     'Available on <span class="caret"></span>',
