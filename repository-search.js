@@ -46,74 +46,66 @@ $( document ).ready(function() {
         },
 
         templateHit: function(){
-            tmpl_array = [];
-
-            tmpl_array.push('<div class="hit-box" ">');
-
-            tmpl_array.push('<div class="row primary-row" data-toggle="collapse" data-target=".<%- repository.id %>">');
-            tmpl_array.push('   <div class="col-md-9">');
-            tmpl_array.push('       <div>');
-            tmpl_array.push('           <span class="repo-name"><%- repository.name %></span>');
-            tmpl_array.push('           <span class="repo-owner">by <%- repository.repo_owner_username %></span>');
-            tmpl_array.push('       </div>');
-            tmpl_array.push('       <div>');
-            tmpl_array.push('           <span class="repo-desc"><i><%- repository.description %></i></span>');
-            tmpl_array.push('       </div>');
-            tmpl_array.push('   </div>');
-            tmpl_array.push('   <div class="col-md-3">');
-            tmpl_array.push('   <% if (repository.approved === "yes") { %>');
-            tmpl_array.push('   <div title="This is a Reviewed Tool of High Quality">');
-            tmpl_array.push('       <span class="fa fa-certificate fa-lg"></span>&nbsp; Certified');
-            tmpl_array.push('   </div>');
-            tmpl_array.push('   <% } %>');
-            tmpl_array.push('   <div title="Total Number of Installations">');
-            tmpl_array.push('       <span  class="fa fa-download fa-lg"></span>&nbsp; <%- repository.times_downloaded %>');
-            tmpl_array.push('   </div>');
-            tmpl_array.push('   <div title="Tool Updated on <%- repository.full_last_updated %>">');
-            tmpl_array.push('       <span class="fa fa-clock-o fa-lg"></span>&nbsp; <%- repository.last_updated %>');
-            tmpl_array.push('   </div>');
-            tmpl_array.push('   </div>');
-            tmpl_array.push('</div>');
-
-            tmpl_array.push('<div class="sub-row collapse row <%- repository.id %>">');
-            tmpl_array.push('   <div class="col-md-10 col-md-offset-1">');
-            tmpl_array.push('       <div class="well well-sm desc-well">');
-            tmpl_array.push('           <%- repository.long_description %>');
-            tmpl_array.push('       </div>');
-            tmpl_array.push('   </div>');
-            tmpl_array.push('</div>');
-
-            tmpl_array.push('<div class="sub-row collapse row <%- repository.id %>">');
-            tmpl_array.push('   <div class="col-md-10 col-md-offset-1">');
-            tmpl_array.push('       <a href="<%- repository.url %>" target="_blank"><button type="button" class="btn btn-primary">See Details</button></a>');
-            // tmpl_array.push('       <button type="button" class="btn-install btn btn-success">Install to Galaxy</button>');
-            tmpl_array.push([
-            '<div class="btn-group">',
-              '<button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-expanded="false">',
-                'Available on <span class="caret"></span>',
-              '</button>',
-              '<ul class="dropdown-menu" role="menu">',
-                '<li><a href="#">Main Galaxy</a></li>',
-                '<li><a href="#">Andromeda Galaxy</a></li>',
-                '<li><a href="#">Biomina</a></li>',
-                '<li class="divider"></li>',
-                '<li><a href="#">Test Galaxy</a></li>',
-              '</ul>',
-            '</div>'].join( '' ));
-            // tmpl_array.push('       <a tabindex="0" class="btn btn-info" role="button" data-toggle="popover" data-trigger="focus" title="Matched Terms" data-content="score: <%- score %>    <%- matched_terms %>">Show matched terms</a>');
-            tmpl_array.push('   </div>');
-            tmpl_array.push('   <p class="info">score: <%- score %></p>');
-            tmpl_array.push('</div>');
-
-            tmpl_array.push('');
-            tmpl_array.push('');
-            tmpl_array.push('');
-            tmpl_array.push('');
-  
-            tmpl_array.push('</div>');
-
-
-            return _.template( tmpl_array.join( '' ) );
+            return _.template( [
+            '<div class="hit-box" ">',
+            '<div class="row primary-row" data-toggle="collapse" data-target=".<%- repository.id %>">',
+            '   <div class="col-md-9">',
+            '       <div>',
+            '           <span class="repo-name"><%- repository.name %></span>',
+            '           <span class="repo-owner">by <%- repository.repo_owner_username %></span>',
+            '       </div>',
+            '       <div>',
+            '           <span class="repo-desc"><i><%- repository.description %></i></span>',
+            '       </div>',
+            '   </div>',
+            '   <div class="col-md-3">',
+            '   <% if (repository.approved === "yes") { %>',
+            '   <div title="This is a Reviewed Tool of High Quality">',
+            '       <span class="fa fa-certificate fa-lg"></span>&nbsp; Certified',
+            '   </div>',
+            '   <% } %>',
+            '   <div title="Total Number of Installations">',
+            '       <span  class="fa fa-download fa-lg"></span>&nbsp; <%- repository.times_downloaded %>',
+            '   </div>',
+            '   <div title="Tool Updated on <%- repository.full_last_updated %>">',
+            '       <span class="fa fa-clock-o fa-lg"></span>&nbsp; <%- repository.last_updated %>',
+            '   </div>',
+            '   </div>',
+            '</div>',
+            '<div class="sub-row collapse row <%- repository.id %>">',
+            '   <div class="col-md-10 col-md-offset-1">',
+            '       <div>',
+            '           <%- repository.long_description %>',
+            '       </div>',
+            '   </div>',
+            '</div>',
+            '<div class="sub-row collapse row <%- repository.id %>">',
+            '   <div class="col-md-10 col-md-offset-1">',
+                    '<a href="<%- repository.url %>" target="_blank"><button type="button" class="btn btn-primary"><span class="fa fa-search-plus fa-lg"></span> Details</button></a>',
+                    '<a title="Visit Homepage" href="<%- repository.homepage_url %>" target="_blank"><button type="button" class="btn btn-primary"><span class="fa fa-home fa-lg"></span> Homepage</button></a>',
+                    '<a href="<%- repository.remote_repository_url %>" target="_blank"><button type="button" class="btn btn-primary"><span class="fa fa-cogs fa-lg"></span> Development</button></a>',
+                    // '<div class="btn-group">',
+                    //   '<button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-expanded="false">',
+                    //     'Available on <span class="caret"></span>',
+                    //   '</button>',
+                    //   '<ul class="dropdown-menu" role="menu">',
+                    //     '<li><a href="#">Main Galaxy</a></li>',
+                    //     '<li><a href="#">Andromeda Galaxy</a></li>',
+                    //     '<li><a href="#">Biomina</a></li>',
+                    //     '<li class="divider"></li>',
+                    //     '<li><a href="#">Test Galaxy</a></li>',
+                    //   '</ul>',
+                    // '</div>',
+                    // '<a tabindex="0" class="btn btn-info" role="button" data-toggle="popover" data-trigger="focus" title="Matched Terms" data-content="score: <%- score %>    <%- matched_terms %>">Show matched terms</a>',
+            '   </div>',
+            '</div>',
+            '<div class="sub-row collapse row <%- repository.id %>">',
+            '   <div class="col-md-10 col-md-offset-1">',
+                '   <p class="info">search score: <%- score %></p>',
+                '</div>',
+            '</div>',
+            '</div>'
+            ].join( '' ) );
         }
     });
 
