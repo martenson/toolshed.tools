@@ -14,10 +14,50 @@ $( document ).ready(function() {
         }
     });
 
+    var SearchView = Backbone.View.extend({
+        el: '.searchbox',
+        events:{
+            'click .search-clear' : 'clearSearchInput'
+        },
+
+        initialize: function( options ){
+            this.options = _.defaults( this.options || {}, this.defaults, options );
+            this.render();
+        },
+
+        render: function(){
+            var template = this.templateSearch();
+            this.$el.html(template());
+            $('[data-toggle="tooltip"]').tooltip()
+            return this;
+        },
+
+        clearSearchInput: function( event ){
+            var $input = $( this ).parent().children( 'input' );
+            $input.focus().val( '' ).trigger( 'clear:searchInput' );
+        },
+
+        templateSearch: function(){
+            return _.template( [
+            '<form>',
+                '<div class="form-group">',
+                    '<label class="sr-only" for="search_input">Search</label>',
+                    '<input type="search" autocomplete="off" class="form-control" id="search_input" placeholder="Search Tool Shed">',
+                    '<span href="#" class="search-clear fa fa-lg fa-times-circle" data-toggle="tooltip" data-placement="top" title="clear (esc)"></span>',
+                '</div>',
+            '</form>',
+            '<div>',
+                '<span class="repositories-results">Repositories</span> | Tools | Categories | Authors | Groups',
+            '</div>'
+            ].join( '' ) );
+        }
+
+    });
+
     var HitView = Backbone.View.extend({
         events:{
-            'click .btn-install' : 'installRepository',
-            'click .btn-matched' : 'showMatchedTerms'
+            'click .btn-install'  : 'installRepository',
+            'click .btn-matched'  : 'showMatchedTerms'
         },
 
         defaults: {},
@@ -119,8 +159,8 @@ $( document ).ready(function() {
         el: '.results',
         defaults: {
             shed: {
-                name: "Test Tool Shed",
-                url: "https://testtoolshed.g2.bx.psu.edu"
+                name: "Main Tool Shed",
+                url: "https://toolshed.g2.bx.psu.edu"
             }
         },
 
@@ -141,10 +181,9 @@ $( document ).ready(function() {
         fetchAll: function( options ){
             this.options = _.extend( this.options, options );
             this.collection.reset();
-            this.fetchResults();
+            this.fetchRepoResults();
         },
-
-        fetchResults: function( options ){
+        fetchRepoResults: function( options ){
             this.options = _.extend( this.options, options );
             var that = this;
             this.container.url = this.options.shed.url + this.container.get( 'urlRoot' );
@@ -157,6 +196,7 @@ $( document ).ready(function() {
                 success: function( response, results_container ){
                     if ( results_container.total_results > 0 ){
                         console.log( 'total results: ' + results_container.total_results + ' from: ' + results_container.hostname );
+                        $('.repositories-results').text('Repositories(' + results_container.total_results + ')');
                         that.addAll();
                     } else{
                         console.log( 'fetched 0' );
@@ -203,6 +243,8 @@ $( document ).ready(function() {
         });
 
 $(function() {
+    $('[data-toggle="tooltip"]').tooltip();
+    var searchView = new SearchView();
     var resultListView = new ResultsView();
     var timer;
     $( "#search_input" ).keyup( function( e ) {
