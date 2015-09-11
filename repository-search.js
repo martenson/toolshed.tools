@@ -1,16 +1,16 @@
 $( document ).ready(function() {
 
     var Hit = Backbone.Model.extend({
-        url : "/api/search/"
+        url : "/api/repositories"
     });
     var Hits = Backbone.Collection.extend({
-        url : "/api/search/",
+        url : "/api/repositories",
         model: Hit
     });
     var ResultsContainer = Backbone.Model.extend({
         defaults : {
             container_hits : new Hits(),
-            urlRoot : "/api/search/"
+            urlRoot : "/api/repositories"
         }
     });
 
@@ -33,6 +33,7 @@ $( document ).ready(function() {
             var repository = model.get( 'repository' );
             var sharable_url = this.options.shed.url + '/view/' + repository.repo_owner_username + '/' + repository.name;
             repository.url = sharable_url;
+            console.log(repository)
             this.setElement( template( { 
                 repository: repository, 
                 matched_terms: JSON.stringify( model.get( 'matched_terms' ) ),
@@ -48,63 +49,67 @@ $( document ).ready(function() {
 
         templateHit: function(){
             return _.template( [
-            '<div class="hit-box" ">',
-            '<div class="row primary-row" data-toggle="collapse" data-target=".<%- repository.id %>">',
-            '   <div class="col-md-9">',
-            '       <div>',
-            '           <span class="repo-name"><%- repository.name %></span>',
-            '           <span class="repo-owner">by <%- repository.repo_owner_username %></span>',
-            '       </div>',
-            '       <div>',
-            '           <span class="repo-desc"><i><%- repository.description %></i></span>',
-            '       </div>',
-            '   </div>',
-            '   <div class="col-md-3">',
-            '   <% if (repository.approved === "yes") { %>',
-            '   <div data-toggle="tooltip" data-placement="top" title="This is a Reviewed Tool of High Quality">',
-            '       <span class="fa fa-certificate fa-lg"></span>&nbsp; Certified',
-            '   </div>',
-            '   <% } %>',
-            '   <div data-toggle="tooltip" data-placement="top" title="Total Number of Installations">',
-            '       <span  class="fa fa-download fa-lg"></span>&nbsp; <%- repository.times_downloaded %>',
-            '   </div>',
-            '   <div data-toggle="tooltip" data-placement="top" title="Updated on <%- repository.full_last_updated %>">',
-            '       <span class="fa fa-clock-o fa-lg"></span>&nbsp; <%- repository.last_updated %>',
-            '   </div>',
-            '   </div>',
-            '</div>',
-            '<div class="sub-row collapse row <%- repository.id %>">',
-            '   <div class="col-md-10 col-md-offset-1">',
-            '       <div>',
-            '           <%- repository.long_description %>',
-            '       </div>',
-            '   </div>',
-            '</div>',
-            '<div class="sub-row collapse row <%- repository.id %>">',
-            '   <div class="col-md-10 col-md-offset-1">',
-                    '<a data-toggle="tooltip" data-placement="top" title="Visit Tool Shed" href="<%- repository.url %>" target="_blank"><button type="button" class="btn btn-default"><span class="fa fa-link fa-lg"></span> </button></a>',
-                    '<a data-toggle="tooltip" data-placement="top" title="Visit Homepage" href="<%- repository.homepage_url %>" target="_blank"><button type="button" class="btn btn-default"><span class="fa fa-home fa-lg"></span> </button></a>',
-                    '<a data-toggle="tooltip" data-placement="top" title="Visit Development Repository" href="<%- repository.remote_repository_url %>" target="_blank"><button type="button" class="btn btn-default"><span class="fa fa-cogs fa-lg"></span> </button></a>',
-                    // '<div class="btn-group">',
-                    //   '<button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-expanded="false">',
-                    //     'Available on <span class="caret"></span>',
-                    //   '</button>',
-                    //   '<ul class="dropdown-menu" role="menu">',
-                    //     '<li><a href="#">Main Galaxy</a></li>',
-                    //     '<li><a href="#">Andromeda Galaxy</a></li>',
-                    //     '<li><a href="#">Biomina</a></li>',
-                    //     '<li class="divider"></li>',
-                    //     '<li><a href="#">Test Galaxy</a></li>',
-                    //   '</ul>',
-                    // '</div>',
-                    // '<a tabindex="0" class="btn btn-info" role="button" data-toggle="popover" data-trigger="focus" title="Matched Terms" data-content="score: <%- score %>    <%- matched_terms %>">Show matched terms</a>',
-            '   </div>',
-            '</div>',
-            '<div class="sub-row collapse row <%- repository.id %>">',
-            '   <div class="col-md-10 col-md-offset-1">',
-                '   <p class="info">search score: <%- score %></p>',
+            '<div class="hit-box">',
+                '<div class="row primary-row" data-toggle="collapse" data-target=".<%- repository.id %>">',
+                '   <div class="col-md-9">',
+                '       <div>',
+                '           <span class="repo-name"><%- repository.name %></span>',
+                '           <span class="repo-owner">by <%- repository.repo_owner_username %></span>',
+                '       </div>',
+                '       <div>',
+                '           <span class="repo-desc"><i><%- repository.description %></i></span>',
+                '       </div>',
+                '   </div>',
+                '   <div class="col-md-3">',
+                '   <% if (repository.approved === "yes") { %>',
+                '   <div data-toggle="tooltip" data-placement="top" title="This is a Reviewed Tool of High Quality">',
+                '       <span class="fa fa-certificate fa-lg"></span>&nbsp; Certified',
+                '   </div>',
+                '   <% } %>',
+                '   <div data-toggle="tooltip" data-placement="top" title="Total number of clones">',
+                '       <span  class="fa fa-download fa-lg"></span>&nbsp; <%- repository.times_downloaded %>',
+                '   </div>',
+                '   <div data-toggle="tooltip" data-placement="top" title="Updated <%- repository.full_last_updated %>">',
+                '       <span class="fa fa-clock-o fa-lg"></span>&nbsp; <%- repository.last_updated %>',
+                '   </div>',
+                '   </div>',
                 '</div>',
-            '</div>',
+                '<div class="sub-row collapse row <%- repository.id %>">',
+                '   <div class="col-md-10 col-md-offset-1">',
+                '       <div>',
+                '           <%- repository.long_description %>',
+                '       </div>',
+                '   </div>',
+                // '</div>',
+                // '<div class="sub-row collapse row <%- repository.id %>">',
+                '   <div class="col-md-10 col-md-offset-1">',
+                        '<a data-toggle="tooltip" data-placement="top" title="Visit Tool Shed" href="<%- repository.url %>" target="_blank"><button type="button" class="btn-hit btn btn-default"><span class="fa fa-link fa-lg"></span> </button></a>',
+                        '<% if(repository.homepage_url !== null){ %>',
+                        '<a data-toggle="tooltip" data-placement="top" title="Visit Homepage" href="<%- repository.homepage_url %>" target="_blank"><button type="button" class="btn-hit btn btn-default"><span class="fa fa-home fa-lg"></span> </button></a>',
+                        '<% } %>',
+                        '<% if(repository.remote_repository_url !== null){ %>',
+                        '<a data-toggle="tooltip" data-placement="top" title="Visit Development Repository" href="<%- repository.remote_repository_url %>" target="_blank"><button type="button" class="btn-hit btn btn-default"><span class="fa fa-cogs fa-lg"></span> </button></a>',
+                        '<% } %>',
+                        // '<div class="btn-group">',
+                        //   '<button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-expanded="false">',
+                        //     'Available on <span class="caret"></span>',
+                        //   '</button>',
+                        //   '<ul class="dropdown-menu" role="menu">',
+                        //     '<li><a href="#">Main Galaxy</a></li>',
+                        //     '<li><a href="#">Andromeda Galaxy</a></li>',
+                        //     '<li><a href="#">Biomina</a></li>',
+                        //     '<li class="divider"></li>',
+                        //     '<li><a href="#">Test Galaxy</a></li>',
+                        //   '</ul>',
+                        // '</div>',
+                        // '<a tabindex="0" class="btn btn-info" role="button" data-toggle="popover" data-trigger="focus" title="Matched Terms" data-content="score: <%- score %>    <%- matched_terms %>">Show matched terms</a>',
+                '   </div>',
+                // '</div>',
+                // '<div class="sub-row collapse row <%- repository.id %>">',
+                    '<div class="col-md-10 col-md-offset-1">',
+                        '<p class="info">search score: <%- score %></p>',
+                    '</div>',
+                '</div>',
             '</div>'
             ].join( '' ) );
         }
@@ -146,7 +151,7 @@ $( document ).ready(function() {
             this.container.fetch({
                  data : {
                     jsonp : true,
-                    search_term : that.options.query
+                    q : that.options.query
                 },
                 dataType: 'jsonp',
                 success: function( response, results_container ){
@@ -160,7 +165,7 @@ $( document ).ready(function() {
                 error: function( parsedResponse,statusText,jqXhr ){
                     console.log( 'There was an error while fetching results.' );
                 },
-                timeout : 5000
+                timeout : 10000
             });
         },
 
