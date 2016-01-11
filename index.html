@@ -10,8 +10,8 @@
     <style media="screen" type="text/css">
 
         .searchbox{
-            width: 33%;
-            margin-top: 5em;
+            width: 20%;
+            margin-top: 3em;
             margin-right: auto;
         }
         .searchbutton{
@@ -57,7 +57,7 @@
             margin-bottom: auto;
         }
         .sub-row{
-           margin-top: 1em; 
+           margin-top: 1em;
         }
         .btn-hit{
             margin: 0.2em;
@@ -69,13 +69,30 @@
 
         }
         .fa-times-circle{
+            height: 20px;
+            width: 20px;
             float: right;
             margin-right: 8px;
             margin-top: -33px;
             line-height: 34px;
+            cursor: pointer;
         }
         .fa-times-circle:before{
             content: "\f057";
+        }
+        .search-loader{
+            margin-top: 2em;
+            display: none;
+        }
+        .loader-icon{
+            background-image: url('static/loading_small_white_bg.gif');
+            background-repeat: no-repeat;
+            padding: 8px;
+            float: left;
+        }
+        .no-results{
+            margin-top: 2em;
+            display: none;
         }
     </style>
 </head>
@@ -95,7 +112,11 @@
         <div class="searchbox">
         </div>
         <div class="results">
-            <div class="results-header">
+            <div class="search-loader" title="loading">
+                <span class="loader-icon"></span><span>loading</span>
+            </div>
+            <div class="no-results" title="no results found">
+                <span>no results for given keywords and section</span>
             </div>
             <div class="hits">
             </div>

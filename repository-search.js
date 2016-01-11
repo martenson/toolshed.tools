@@ -1,5 +1,15 @@
 $( document ).ready(function() {
 
+    var SearchRouter = Backbone.Router.extend({
+
+      routes: {
+        ""             : "search_repos",
+        // "repos/:query" : "search_repos",
+        "tools/:query" : "search_tools"
+      }
+
+    });
+
     var Hit = Backbone.Model.extend({
         url : "/api/repositories"
     });
@@ -14,10 +24,46 @@ $( document ).ready(function() {
         }
     });
 
+    var ToolHit = Backbone.Model.extend({
+        url : "/api/tools"
+    });
+    var ToolHits = Backbone.Collection.extend({
+        url : "/api/tools",
+        model: ToolHit
+    });
+    var ToolContainer = Backbone.Model.extend({
+        defaults : {
+            container_hits : new ToolHits(),
+            urlRoot : "/api/tools"
+        }
+    });
+
     var SearchView = Backbone.View.extend({
         el: '.searchbox',
         events:{
+            'keyup #search_input' : 'search',
             'click .search-clear' : 'clearSearchInput'
+        },
+
+        // test: function(){
+        //   alert('works!');
+        // },
+
+        search: function(e){
+          var timer;
+          $('.hits').empty();
+          $('.no-results').hide();
+          $('.search-loader').show();
+          clearTimeout(timer);
+          var ms = 200; // milliseconds
+          var val = $('#search_input').val();
+          var that = this;
+          if ( val.length > 2 ){
+              timer = setTimeout( function() {
+                  $( '.hits' ).empty();
+                  that.options.app.resultListView.fetchAll( { query: val } );
+              }, ms );
+          }
         },
 
         initialize: function( options ){
@@ -33,8 +79,7 @@ $( document ).ready(function() {
         },
 
         clearSearchInput: function( event ){
-            var $input = $( this ).parent().children( 'input' );
-            $input.focus().val( '' ).trigger( 'clear:searchInput' );
+            $('#search_input').val('');
         },
 
         templateSearch: function(){
@@ -47,7 +92,7 @@ $( document ).ready(function() {
                 '</div>',
             '</form>',
             '<div>',
-                '<span class="repositories-results">Repositories</span> | Tools | Categories | Authors | Groups',
+                '<a href="" class="repositories-results-link">Repositories</a> | <a class="tools-results-link" href="">Tools</a> | Categories | Authors | Groups',
             '</div>'
             ].join( '' ) );
         }
@@ -74,8 +119,8 @@ $( document ).ready(function() {
             var sharable_url = this.options.shed.url + '/view/' + repository.repo_owner_username + '/' + repository.name;
             repository.url = sharable_url;
             console.log(repository)
-            this.setElement( template( { 
-                repository: repository, 
+            this.setElement( template( {
+                repository: repository,
                 matched_terms: JSON.stringify( model.get( 'matched_terms' ) ),
                 score: Math.ceil(model.get( 'score' ) * 100)/100 } ) );
             this.$el.show();
@@ -164,13 +209,14 @@ $( document ).ready(function() {
             }
         },
 
-        initialize: function( options ){
+        initialize: function(options){
             this.options = _.defaults( this.options || {}, this.defaults, options );
             this.collection = new Hits();
             this.listenTo( this.collection, 'add', this.renderOne );
-                // this.listenTo( this.collection, 'remove', this.removeOne );
-                // start to listen if someone modifies the collection
+            // this.listenTo( this.collection, 'remove', this.removeOne );
+            // start to listen if someone modifies the collection
             this.container = new ResultsContainer();
+            this.tool_container = new ResultsContainer();
         },
 
         /**
@@ -178,11 +224,12 @@ $( document ).ready(function() {
          * @param  {[type]} options [description]
          * @return {[type]}         [description]
          */
-        fetchAll: function( options ){
+        fetchAll: function(options){
             this.options = _.extend( this.options, options );
             this.collection.reset();
             this.fetchRepoResults();
         },
+
         fetchRepoResults: function( options ){
             this.options = _.extend( this.options, options );
             var that = this;
@@ -190,20 +237,54 @@ $( document ).ready(function() {
             this.container.fetch({
                  data : {
                     jsonp : true,
-                    q : that.options.query
+                    q : that.options.query,
+                    page_size: 50
                 },
                 dataType: 'jsonp',
                 success: function( response, results_container ){
+                    $('.search-loader').hide();
                     if ( results_container.total_results > 0 ){
+                        $('.no-results').hide();
                         console.log( 'total results: ' + results_container.total_results + ' from: ' + results_container.hostname );
-                        $('.repositories-results').text('Repositories(' + results_container.total_results + ')');
+                        $('.repositories-results-link').text('Repositories(' + results_container.total_results + ')');
                         that.addAll();
                     } else{
                         console.log( 'fetched 0' );
+                        $('.no-results').show();
                     }
                 },
-                error: function( parsedResponse,statusText,jqXhr ){
-                    console.log( 'There was an error while fetching results.' );
+                error: function(parsedResponse, statusText, jqXhr){
+                    console.log('There was an error while fetching results.');
+                },
+                timeout : 10000
+            });
+        },
+
+        fetchToolResults: function( options ){
+            this.options = _.extend( this.options, options );
+            var that = this;
+            this.tool_container.url = this.options.shed.url + this.container.get( 'urlRoot' );
+            this.container.fetch({
+                 data : {
+                    jsonp : true,
+                    q : that.options.query,
+                    page_size: 50
+                },
+                dataType: 'jsonp',
+                success: function( response, results_container ){
+                    $('.search-loader').hide();
+                    if ( results_container.total_results > 0 ){
+                        $('.no-results').hide();
+                        console.log( 'total results: ' + results_container.total_results + ' from: ' + results_container.hostname );
+                        $('.repositories-results-link').text('Repositories(' + results_container.total_results + ')');
+                        that.addAll();
+                    } else{
+                        console.log( 'fetched 0' );
+                        $('.no-results').show();
+                    }
+                },
+                error: function(parsedResponse, statusText, jqXhr){
+                    console.log('There was an error while fetching results.');
                 },
                 timeout : 10000
             });
@@ -225,49 +306,34 @@ $( document ).ready(function() {
             var hitView = new HitView( { hit: hit, shed: this.options.shed } );
             this.$el.find('.hits').append( hitView.el );
             this.$el.find('[data-toggle="popover"]').popover();
-        },
-
-        removeOne: function( model ){
-
-        },
-
-        templateResultsHeader: function(){
-            tmpl_array = [];
-
-            tmpl_array.push('');
-            tmpl_array.push('');
-
-            return _.template( tmpl_array.join( '' ) );
         }
 
-        });
+    });
 
-$(function() {
-    $('[data-toggle="tooltip"]').tooltip();
-    var searchView = new SearchView();
-    var resultListView = new ResultsView();
-    var timer;
-    $( "#search_input" ).keyup( function( e ) {
-        $( '.hits' ).empty();
-        clearTimeout(timer);
-        var ms = 200; // milliseconds
-        var val = this.value;
-        if ( val.length > 2 ){
-            timer = setTimeout( function() {
-                $( '.hits' ).empty();
-                resultListView.fetchAll( { query: val } );
-            }, ms );
-        }
-  });
+var SearchApp = Backbone.View.extend({
+  searchView: null,
+  resultListView: null,
+
+  initialize: function(){
+    this.search_router = new SearchRouter();
+    this.search_router.on( 'route:search_repos', function() {
+      this.searchView = new SearchView({'app': this});
+      this.resultListView = new ResultsView({'app': this});
+    });
+
     $( "#search_input" ).keydown( function( e ) {
-        if( event.keyCode == 13 ) {
-            event.preventDefault();
-            return false;
-        }
-  });
+      if( event.keyCode == 13 ) {
+        event.preventDefault();
+        return false;
+      }
+    });
 
+    Backbone.history.start({pushState: false});
+  },
 });
 
-
+$(function() {
+  window.searchApp = new SearchApp();
+});
 
 });
