@@ -56,12 +56,13 @@ $( document ).ready(function() {
           $('.search-loader').show();
           clearTimeout(timer);
           var ms = 200; // milliseconds
-          var val = $('#search_input').val();
+          var q = $('#search_input').val();
+          ga( 'send', 'pageview', '/?q=' + q );
           var that = this;
-          if ( val.length > 2 ){
+          if ( q.length > 2 ){
               timer = setTimeout( function() {
                   $( '.hits' ).empty();
-                  that.options.app.resultListView.fetchAll( { query: val } );
+                  that.options.app.resultListView.fetchAll( { query: q } );
               }, ms );
           }
         },
