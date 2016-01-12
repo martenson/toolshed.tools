@@ -9,10 +9,13 @@
     <title>Tool Shed Search</title>
     <style media="screen" type="text/css">
 
-        .searchbox{
-            width: 20%;
+        .search-header{
+            width: 80%;
             margin-top: 3em;
             margin-right: auto;
+        }
+        .searchbox{
+            float: left;
         }
         .searchbutton{
             margin-right: auto;
@@ -20,8 +23,12 @@
             width: 10%;
         }
         .hits{
+            margin-top: 2em;
             margin-right: auto;
             margin-left: auto;
+        }
+        .results{
+            clear: both;
         }
         .repo-name{
             font-size: 2em;
@@ -30,7 +37,6 @@
             padding: 0.8em;
             border-style: solid;
             border-color: white;
-            /*border-color: #ededed;*/
             border-width: 0.2em;
             -moz-border-radius: 15px;
             border-radius: 15px;
@@ -43,11 +49,9 @@
             border-color: #d6b161;
         }
         .repo-owner{
-            /*color: grey;*/
             font-size: 1.2em;
         }
         .fa{
-            /*color: #d6b161;*/
             color: grey;
         }
         .fa-certificate{
@@ -94,6 +98,10 @@
             margin-top: 2em;
             display: none;
         }
+        .too-short{
+            margin-top: 2em;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -109,7 +117,9 @@
     </script>
 
     <div class="container-fluid">
-        <div class="searchbox">
+        <div class="search-header">
+            <div class="searchbox">
+            </div>
         </div>
         <div class="results">
             <div class="search-loader" title="loading">
@@ -117,6 +127,9 @@
             </div>
             <div class="no-results" title="no results found">
                 <span>no results for given keywords and section</span>
+            </div>
+            <div class="too-short" title="query too short">
+                <span>please use keyword of at least three characters</span>
             </div>
             <div class="hits">
             </div>

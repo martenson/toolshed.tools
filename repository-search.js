@@ -41,30 +41,45 @@ $( document ).ready(function() {
     var SearchView = Backbone.View.extend({
         el: '.searchbox',
         events:{
-            'keyup #search_input' : 'search',
-            'click .search-clear' : 'clearSearchInput'
+            'keyup #search_input'    : 'search',
+            'keypress #search_input' : 'detectSpecialKeys',
+            'click .search-clear'    : 'clearSearchInput'
         },
 
-        // test: function(){
-        //   alert('works!');
-        // },
-
-        search: function(e){
-          var timer;
+        search: function(){
           $('.hits').empty();
           $('.no-results').hide();
-          $('.search-loader').show();
-          clearTimeout(timer);
-          var ms = 200; // milliseconds
-          var q = $('#search_input').val();
-          ga( 'send', 'pageview', '/?q=' + q );
-          var that = this;
-          if ( q.length > 2 ){
-              timer = setTimeout( function() {
-                  $( '.hits' ).empty();
-                  that.options.app.resultListView.fetchAll( { query: q } );
-              }, ms );
+          $('.too-short').hide();
+          var query = $('#search_input').val().toLowerCase().trim();
+
+          if (this.timer) {
+            clearTimeout(this.timer);
           }
+
+          var that = this;
+          this.timer = setTimeout(function () {
+            if ( query.length === 0 ){
+              return false;
+            } else if ( query.length <= 2 ){
+              $('.too-short').show();
+            } else if ( query.length > 2 ){
+              $('.search-loader').show();
+              that.options.app.resultListView.fetchAll({'query': query});
+              // log the search to analytics if present
+              if ( typeof ga !== 'undefined' ) {
+                  ga('send', 'pageview', '/?q=' + query);
+              }
+            }
+          }, 400 );
+        },
+
+        detectSpecialKeys: function(event){
+            if( event.keyCode === 13 ) {
+              event.preventDefault();
+            } else if (event.keyCode === 27){
+              event.preventDefault();
+               this.clearSearchInput(event);
+            }
         },
 
         initialize: function( options ){
@@ -88,7 +103,7 @@ $( document ).ready(function() {
             '<form>',
                 '<div class="form-group">',
                     '<label class="sr-only" for="search_input">Search</label>',
-                    '<input type="search" autocomplete="off" class="form-control" id="search_input" placeholder="Search Tool Shed">',
+                    '<input name="query" type="search" autocomplete="off" class="form-control" id="search_input" placeholder="Search Tool Shed">',
                     '<span href="#" class="search-clear fa fa-lg fa-times-circle" data-toggle="tooltip" data-placement="top" title="clear (esc)"></span>',
                 '</div>',
             '</form>',
@@ -102,16 +117,15 @@ $( document ).ready(function() {
 
     var HitView = Backbone.View.extend({
         events:{
-            'click .btn-install'  : 'installRepository',
             'click .btn-matched'  : 'showMatchedTerms'
         },
 
         defaults: {},
 
         initialize: function( options ){
-            this.options = _.defaults( this.options || {}, this.defaults, options );
+            this.options = _.defaults(this.options || {}, this.defaults, options);
             this.model = options.hit;
-            this.render( this.model );
+            this.render(this.model);
         },
 
         render: function( model ){
@@ -119,7 +133,6 @@ $( document ).ready(function() {
             var repository = model.get( 'repository' );
             var sharable_url = this.options.shed.url + '/view/' + repository.repo_owner_username + '/' + repository.name;
             repository.url = sharable_url;
-            console.log(repository)
             this.setElement( template( {
                 repository: repository,
                 matched_terms: JSON.stringify( model.get( 'matched_terms' ) ),
@@ -127,10 +140,6 @@ $( document ).ready(function() {
             this.$el.show();
             $('[data-toggle="tooltip"]').tooltip()
             return this;
-        },
-
-        installRepository: function(){
-            alert( '“Use the Force, Luke.”' );
         },
 
         templateHit: function(){
@@ -235,6 +244,7 @@ $( document ).ready(function() {
             this.options = _.extend( this.options, options );
             var that = this;
             this.container.url = this.options.shed.url + this.container.get( 'urlRoot' );
+            console.log('searching for: "' + that.options.query + '"');
             this.container.fetch({
                  data : {
                     jsonp : true,
@@ -292,6 +302,7 @@ $( document ).ready(function() {
         },
 
         addAll: function( container_name ){
+            console.log('adding ALL');
             var container = this.container;
             var hostname = container.get( 'hostname' );
             if ( container.get( 'hits' ).length > 0 ){
@@ -320,13 +331,6 @@ var SearchApp = Backbone.View.extend({
     this.search_router.on( 'route:search_repos', function() {
       this.searchView = new SearchView({'app': this});
       this.resultListView = new ResultsView({'app': this});
-    });
-
-    $( "#search_input" ).keydown( function( e ) {
-      if( event.keyCode == 13 ) {
-        event.preventDefault();
-        return false;
-      }
     });
 
     Backbone.history.start({pushState: false});
