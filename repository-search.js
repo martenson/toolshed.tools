@@ -42,8 +42,8 @@ $( document ).ready(function() {
         el: '.searchbox',
         events:{
             'keyup #search_input'    : 'search',
-            'keypress #search_input' : 'detectSpecialKeys',
-            'click .search-clear'    : 'clearSearchInput'
+            'keydown #search_input' : 'detectSpecialKeys',
+            'click .search-clear'    : 'clearSearch'
         },
 
         defaults:{
@@ -101,8 +101,9 @@ $( document ).ready(function() {
             event.preventDefault();
             this.search(event);
           } else if (event.which === 27){
-             this.clearSearchInput(event);
-             return false;
+            event.preventDefault();
+            this.clearSearch();
+            return false;
           }
         },
 
@@ -113,9 +114,10 @@ $( document ).ready(function() {
             return this;
         },
 
-        clearSearchInput: function(){
+        clearSearch: function(){
           this.options.query = '';
           $('#search_input').val('');
+          $('.repositories-results-link').text('Repositories');
         },
 
         templateSearch: function(){
@@ -275,12 +277,12 @@ $( document ).ready(function() {
                     if ( results_container.total_results > 0 ){
                         $('.no-results').hide();
                         console.log( 'total results: ' + results_container.total_results + ' from: ' + results_container.hostname );
-                        $('.repositories-results-link').text('Repositories(' + results_container.total_results + ')');
                         that.addAll();
                     } else{
                         console.log( 'fetched 0' );
                         $('.no-results').show();
                     }
+                    $('.repositories-results-link').text('Repositories(' + results_container.total_results + ')');
                 },
                 error: function(parsedResponse, statusText, jqXhr){
                     console.log('There was an error while fetching results.');
