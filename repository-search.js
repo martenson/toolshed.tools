@@ -3,9 +3,9 @@ $( document ).ready(function() {
     var SearchRouter = Backbone.Router.extend({
 
       routes: {
-        ""             : "search_repos",
-        // "repos/:query" : "search_repos",
-        "tools/:query" : "search_tools"
+        ""           : "home",
+        "repos?q="   : "search_repos",
+        "repos?q=:q" : "search_repos",
       }
 
     });
@@ -46,45 +46,64 @@ $( document ).ready(function() {
             'click .search-clear'    : 'clearSearchInput'
         },
 
-        search: function(){
-          $('.hits').empty();
+        defaults:{
+          searchtype: 'repos',
+          query: ''
+        },
+
+        initialize: function(options){
+            this.options = _.defaults( this.options || {}, options, this.defaults );
+            this.render();
+            if (this.options.query !== ''){
+              $('#search_input').val(this.options.query);
+              this.search(options);
+            }
+        },
+
+        search: function(options){
+          this.options = _.extend(this.options, options);
+          $('.repo-hits').empty();
           $('.no-results').hide();
           $('.too-short').hide();
-          var query = $('#search_input').val().toLowerCase().trim();
 
           if (this.timer) {
             clearTimeout(this.timer);
           }
-
           var that = this;
           this.timer = setTimeout(function () {
-            if ( query.length === 0 ){
+            if (that.options.query === ''){
+              console.log('query is empty');
+              that.options.query = $('#search_input').val().toLowerCase().trim();
+            }
+            console.log('query: '+that.options.query);
+            if ( that.options.query.length === 0 ){
+              Backbone.history.navigate('');
               return false;
-            } else if ( query.length <= 2 ){
+            } else if ( that.options.query.length < 3 ){
               $('.too-short').show();
-            } else if ( query.length > 2 ){
+              that.options.query = '';
+            } else if ( that.options.query.length > 2 ){
               $('.search-loader').show();
-              that.options.app.resultListView.fetchAll({'query': query});
+              that.options.app.resultListView.fetchAll({'query': that.options.query, 'searchtype': that.options.searchtype});
               // log the search to analytics if present
               if ( typeof ga !== 'undefined' ) {
-                  ga('send', 'pageview', '/?q=' + query);
+                  ga('send', 'pageview', '/?q=' + that.options.query);
               }
+              console.log('changin URL');
+              Backbone.history.navigate(that.options.searchtype + '?q=' + that.options.query, {trigger:false});
+              that.options.query = '';
             }
           }, 400 );
         },
 
         detectSpecialKeys: function(event){
-            if( event.keyCode === 13 ) {
-              event.preventDefault();
-            } else if (event.keyCode === 27){
-              event.preventDefault();
-               this.clearSearchInput(event);
-            }
-        },
-
-        initialize: function( options ){
-            this.options = _.defaults( this.options || {}, this.defaults, options );
-            this.render();
+          if( event.which == 13 ) {
+            event.preventDefault();
+            this.search(event);
+          } else if (event.which === 27){
+             this.clearSearchInput(event);
+             return false;
+          }
         },
 
         render: function(){
@@ -94,8 +113,9 @@ $( document ).ready(function() {
             return this;
         },
 
-        clearSearchInput: function( event ){
-            $('#search_input').val('');
+        clearSearchInput: function(){
+          this.options.query = '';
+          $('#search_input').val('');
         },
 
         templateSearch: function(){
@@ -108,14 +128,14 @@ $( document ).ready(function() {
                 '</div>',
             '</form>',
             '<div>',
-                '<a href="" class="repositories-results-link">Repositories</a> | <a class="tools-results-link" href="">Tools</a> | Categories | Authors | Groups',
+                '<a href="#repos" class="repositories-results-link">Repositories</a> | <a href="#tools" class="tools-results-link">Tools</a> | Categories | Authors | Groups',
             '</div>'
             ].join( '' ) );
         }
 
     });
 
-    var HitView = Backbone.View.extend({
+    var RepoHitView = Backbone.View.extend({
         events:{
             'click .btn-matched'  : 'showMatchedTerms'
         },
@@ -213,6 +233,7 @@ $( document ).ready(function() {
     var ResultsView = Backbone.View.extend({
         el: '.results',
         defaults: {
+          searchtype: 'repos',
             shed: {
                 name: "Main Tool Shed",
                 url: "https://toolshed.g2.bx.psu.edu"
@@ -221,22 +242,19 @@ $( document ).ready(function() {
 
         initialize: function(options){
             this.options = _.defaults( this.options || {}, this.defaults, options );
-            this.collection = new Hits();
-            this.listenTo( this.collection, 'add', this.renderOne );
-            // this.listenTo( this.collection, 'remove', this.removeOne );
-            // start to listen if someone modifies the collection
+            this.repo_collection = new Hits();
+            this.tool_collection = new ToolHits();
+            this.listenTo( this.repo_collection, 'add', this.renderOneRepo );
+            this.listenTo( this.tool_collection, 'add', this.renderOneTool );
+            // this.listenTo( this.repo_collection, 'remove', this.removeOne );
+            // start to listen if someone modifies the repo_collection
             this.container = new ResultsContainer();
             this.tool_container = new ResultsContainer();
         },
 
-        /**
-         * Fetch results from all available Tool Sheds.
-         * @param  {[type]} options [description]
-         * @return {[type]}         [description]
-         */
         fetchAll: function(options){
             this.options = _.extend( this.options, options );
-            this.collection.reset();
+            this.repo_collection.reset();
             this.fetchRepoResults();
         },
 
@@ -249,7 +267,7 @@ $( document ).ready(function() {
                  data : {
                     jsonp : true,
                     q : that.options.query,
-                    page_size: 50
+                    page_size: 100
                 },
                 dataType: 'jsonp',
                 success: function( response, results_container ){
@@ -271,52 +289,57 @@ $( document ).ready(function() {
             });
         },
 
-        fetchToolResults: function( options ){
-            this.options = _.extend( this.options, options );
-            var that = this;
-            this.tool_container.url = this.options.shed.url + this.container.get( 'urlRoot' );
-            this.container.fetch({
-                 data : {
-                    jsonp : true,
-                    q : that.options.query,
-                    page_size: 50
-                },
-                dataType: 'jsonp',
-                success: function( response, results_container ){
-                    $('.search-loader').hide();
-                    if ( results_container.total_results > 0 ){
-                        $('.no-results').hide();
-                        console.log( 'total results: ' + results_container.total_results + ' from: ' + results_container.hostname );
-                        $('.repositories-results-link').text('Repositories(' + results_container.total_results + ')');
-                        that.addAll();
-                    } else{
-                        console.log( 'fetched 0' );
-                        $('.no-results').show();
-                    }
-                },
-                error: function(parsedResponse, statusText, jqXhr){
-                    console.log('There was an error while fetching results.');
-                },
-                timeout : 10000
-            });
-        },
+        // fetchToolResults: function( options ){
+        //     this.options = _.extend( this.options, options );
+        //     var that = this;
+        //     this.tool_container.url = this.options.shed.url + this.container.get( 'urlRoot' );
+        //     this.container.fetch({
+        //          data : {
+        //             jsonp : true,
+        //             q : that.options.query,
+        //             page_size: 100
+        //         },
+        //         dataType: 'jsonp',
+        //         success: function( response, results_container ){
+        //             $('.search-loader').hide();
+        //             if ( results_container.total_results > 0 ){
+        //                 $('.no-results').hide();
+        //                 console.log( 'total results: ' + results_container.total_results + ' from: ' + results_container.hostname );
+        //                 $('.repositories-results-link').text('Repositories(' + results_container.total_results + ')');
+        //                 that.addAll();
+        //             } else{
+        //                 console.log( 'fetched 0' );
+        //                 $('.no-results').show();
+        //             }
+        //         },
+        //         error: function(parsedResponse, statusText, jqXhr){
+        //             console.log('There was an error while fetching results.');
+        //         },
+        //         timeout : 10000
+        //     });
+        // },
 
         addAll: function( container_name ){
-            console.log('adding ALL');
             var container = this.container;
             var hostname = container.get( 'hostname' );
             if ( container.get( 'hits' ).length > 0 ){
                 for (var i = 0; i < container.get( 'hits' ).length; i++) {
                     var hit = container.get( 'hits' )[ i ]
                     hit.hostname = hostname;
-                    this.collection.add( hit );
+                    this.repo_collection.add( hit );
                 }
             }
         },
 
-        renderOne: function( hit ){
-            var hitView = new HitView( { hit: hit, shed: this.options.shed } );
-            this.$el.find('.hits').append( hitView.el );
+        renderOneRepo: function( hit ){
+            var repoHitView = new RepoHitView( { hit: hit, shed: this.options.shed } );
+            this.$el.find('.repo-hits').append( repoHitView.el );
+            this.$el.find('[data-toggle="popover"]').popover();
+        },
+
+        renderOneTool: function( hit ){
+            var toolHitView = new ToolHitView( { hit: hit, shed: this.options.shed } );
+            this.$el.find('.tool-hits').append( toolHitView.el );
             this.$el.find('[data-toggle="popover"]').popover();
         }
 
@@ -328,10 +351,39 @@ var SearchApp = Backbone.View.extend({
 
   initialize: function(){
     this.search_router = new SearchRouter();
-    this.search_router.on( 'route:search_repos', function() {
-      this.searchView = new SearchView({'app': this});
-      this.resultListView = new ResultsView({'app': this});
+    this.search_router.on( 'route:home', function() {
+      console.log('route:home');
+      this.navigate('repos?q=', {trigger: true});
     });
+
+    this.search_router.on( 'route:search_repos', function(q) {
+      console.log('route:search_repos');
+      if (q === null){
+        q = '';
+      }
+      if (this.searchView === null || this.searchView === undefined){
+        console.log('creating new views');
+        console.log('query:'+q)
+        this.searchView = new SearchView({'app': this, 'query': q});
+        this.resultListView = new ResultsView({'app': this});
+      } else{
+        console.log('reusing views');
+        // console.log("inputval: "+$('#search_input').val().toLowerCase().trim());
+        console.log('query:'+q)
+        $('#search_input').val(q);
+        this.searchView.search({'app': this, 'query': q});
+      }
+    });
+
+    // this.search_router.on( 'route:search_tools', function(q) {
+    //   console.log('route:search_tools');
+    //   if (this.searchView === null || this.searchView === undefined){
+    //     this.searchView = new SearchView({'app': this, 'query': q});
+    //     this.resultListView = new ResultsView({'app': this});
+    //   } else{
+    //     this.searchView.search({'app': this, 'query': q});
+    //   }
+    // });
 
     Backbone.history.start({pushState: false});
   },
